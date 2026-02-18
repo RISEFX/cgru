@@ -428,9 +428,11 @@ void GetResources_LINUX(af::HostRes & hres, bool verbose)
    struct utmpx *user;
    while( (user = getutxent()) != NULL)
    {
-       std::string username = user->ut_user;
-       if (userignoreset.count(username) == 0)
-          userset.insert(username);
+      if (user->ut_type == USER_PROCESS) {
+         std::string username = user->ut_user;
+         if (userignoreset.count(username) == 0)
+               userset.insert(username);
+      }
    }
    endutxent();
    
