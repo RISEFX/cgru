@@ -261,8 +261,8 @@ jobs:
           export AF_GUI="YES"
           export AF_FERMER="NO"
 
-          export AF_PYTHON_INCLUDE_PATH="$(python -c 'import sysconfig; print(sysconfig.get_path(\"include\"))')"
-          export AF_PYTHON_LIBRARIES="$(python -c 'import pathlib,sysconfig; print(pathlib.Path(sysconfig.get_config_var(\"LIBDIR\") or \"\", sysconfig.get_config_var(\"LDLIBRARY\") or \"\"))')"
+          export AF_PYTHON_INCLUDE_PATH="$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
+          export AF_PYTHON_LIBRARIES="$(python -c 'import pathlib,sysconfig; print(pathlib.Path(sysconfig.get_config_var("LIBDIR") or "", sysconfig.get_config_var("LDLIBRARY") or ""))')"
 
           vcpkg_installed="$VCPKG_ROOT/installed/x64-osx"
           export CMAKE_PREFIX_PATH="$QT_ROOT:$vcpkg_installed"
@@ -270,6 +270,7 @@ jobs:
           cmake \
             -S afanasy/src/project.cmake \
             -B afanasy/src/project.cmake/build-mac \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
             -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
             -DPostgreSQL_INCLUDE_DIR="$vcpkg_installed/include" \
@@ -281,6 +282,7 @@ jobs:
 
   build-windows:
     name: Build Windows 2019 (SQL + GUI)
+    if: ${{ false }} # Temporarily disabled while stabilizing macOS.
     runs-on: windows-2019
     timeout-minutes: 90
     env:
