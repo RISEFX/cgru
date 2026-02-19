@@ -553,7 +553,7 @@ void SocketItem::checkClosed()
 		}
 	}
 
-	if( time(NULL) - m_wait_time > 2 )
+	if( time(NULL) - m_wait_time > 10 )
 	{
 		AF_WARN << "Client has NOT closed socket first: " << this;
 		closeSocket();
@@ -949,4 +949,3 @@ void SocketsProcessing::EpollDel( int i_sfd)
 	epoll_ctl( ms_this->m_epoll_fd, EPOLL_CTL_DEL, i_sfd, NULL);
 }
 #endif // LINUX
-
