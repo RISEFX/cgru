@@ -495,7 +495,8 @@ af::Msg * jsonSaveObject( rapidjson::Document & i_obj)
 
 	std::string info;
 	info = std::string("Created by afserver at ") + af::time2str();
-	jObj.AddMember("__cgru__", info.c_str(), i_obj.GetAllocator());
+	jObj.AddMember(rapidjson::Value("__cgru__", i_obj.GetAllocator()),
+		rapidjson::Value(info.c_str(), i_obj.GetAllocator()), i_obj.GetAllocator());
 
 	rapidjson::StringBuffer buffer;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
