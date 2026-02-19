@@ -136,6 +136,9 @@ jobs:
     name: Build Windows 2019 (SQL + GUI)
     runs-on: windows-2019
     timeout-minutes: 90
+    env:
+      VCPKG_COMMIT: 44bb3ce006467fc13ba37ca099f64077b8bbf84d
+      VCPKG_DEFAULT_BINARY_CACHE: C:\Users\runneradmin\AppData\Local\vcpkg\archives
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -148,7 +151,7 @@ jobs:
 
       - name: Restore Qt Cache
         id: cache-qt
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: C:\Qt\5.15.2\msvc2019_64
           key: windows-2019-qt-5.15.2-msvc2019_64
@@ -159,6 +162,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip aqtinstall
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt
+
+      - name: Save Qt Cache
+        if: always() && steps.cache-qt.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: C:\Qt\5.15.2\msvc2019_64
+          key: ${{ steps.cache-qt.outputs.cache-primary-key }}
 
       - name: Export Qt Environment
         shell: pwsh
@@ -171,26 +181,29 @@ jobs:
         run: |
           if (Test-Path "C:\vcpkg\.git") {
             Write-Host "Using existing vcpkg checkout at C:\\vcpkg"
-            git -C C:\vcpkg fetch --depth 1 origin
-            git -C C:\vcpkg reset --hard FETCH_HEAD
+            git -C C:\vcpkg fetch --depth 1 origin $env:VCPKG_COMMIT
+            git -C C:\vcpkg checkout --force $env:VCPKG_COMMIT
           } elseif (Test-Path "C:\vcpkg\vcpkg.exe") {
             Write-Host "Using existing vcpkg install at C:\\vcpkg"
           } else {
             git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
+            git -C C:\vcpkg fetch --depth 1 origin $env:VCPKG_COMMIT
+            git -C C:\vcpkg checkout --force $env:VCPKG_COMMIT
           }
           "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Restore vcpkg Cache
         id: cache-vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             C:\vcpkg\downloads
             C:\vcpkg\installed
             C:\vcpkg\packages
-          key: windows-2019-vcpkg-x64-libpq-libzip-${{ hashFiles('.github/workflows/build.yml') }}
+            C:\Users\runneradmin\AppData\Local\vcpkg\archives
+          key: windows-2019-vcpkg-${{ env.VCPKG_COMMIT }}-x64-libpq-libzip
           restore-keys: |
-            windows-2019-vcpkg-x64-libpq-libzip-
+            windows-2019-vcpkg-${{ env.VCPKG_COMMIT }}-x64-
             windows-2019-vcpkg-x64-
 
       - name: Install vcpkg Dependencies
@@ -198,6 +211,17 @@ jobs:
         run: |
           C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
           C:\vcpkg\vcpkg.exe install libpq:x64-windows libzip:x64-windows
+
+      - name: Save vcpkg Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            C:\vcpkg\downloads
+            C:\vcpkg\installed
+            C:\vcpkg\packages
+            C:\Users\runneradmin\AppData\Local\vcpkg\archives
+          key: ${{ steps.cache-vcpkg.outputs.cache-primary-key }}
 
       - name: Configure
         shell: pwsh
