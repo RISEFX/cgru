@@ -1,6 +1,7 @@
 #include "wndcustomdata.h"
 
 #include "../libafanasy/name_af.h"
+#include "../libafanasy/rapidjson/error/en.h"
 
 #include <QLayout>
 #include <QLineEdit>
@@ -59,7 +60,7 @@ void WndCustomData::checkText()
 
 	if( data == NULL )
 	{
-		msg = "ERROR at " + af::itos( doc.GetErrorOffset()) + ": " + doc.GetParseError();
+		msg = "ERROR at " + af::itos( doc.GetErrorOffset()) + ": " + rapidjson::GetParseError_En( doc.GetParseError());
 		m_qLine->setText( afqt::stoq( msg));
 		printf("%s\n", msg.c_str());
 		return;
