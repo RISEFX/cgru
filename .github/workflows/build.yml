@@ -267,15 +267,21 @@ jobs:
 
           vcpkg_installed="$VCPKG_ROOT/installed/x64-osx"
           export CMAKE_PREFIX_PATH="$QT_ROOT:$vcpkg_installed"
+          postgres_lib="$vcpkg_installed/lib/libpq.dylib"
+          if [ ! -f "$postgres_lib" ]; then
+            postgres_lib="$vcpkg_installed/lib/libpq.a"
+          fi
 
           cmake \
             -S afanasy/src/project.cmake \
             -B afanasy/src/project.cmake/build-mac \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DCMAKE_C_FLAGS="-w" \
+            -DCMAKE_CXX_FLAGS="-w" \
             -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
             -DPostgreSQL_INCLUDE_DIR="$vcpkg_installed/include" \
-            -DPostgreSQL_LIBRARY="$vcpkg_installed/lib/libpq.dylib"
+            -DPostgreSQL_LIBRARY="$postgres_lib"
 
       - name: Build
         shell: bash
@@ -395,6 +401,8 @@ jobs:
             -G "Visual Studio 16 2019" `
             -A x64 `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DCMAKE_C_FLAGS="/W0" `
+            -DCMAKE_CXX_FLAGS="/W0" `
             -DCMAKE_PREFIX_PATH="$env:QT_ROOT" `
             -DPostgreSQL_INCLUDE_DIR="$vcpkgInstalled\include" `
             -DPostgreSQL_LIBRARY="$vcpkgInstalled\lib\libpq.lib"
