@@ -80,6 +80,7 @@ void Render::v_jsonWrite( std::ostringstream & o_str, int i_type) const // Threa
 	if( i_type == af::Msg::TRendersResources )
 	{
 		o_str << "\n\"id\":"   << m_id;
+		o_str << ",\n\"host_name\":\"" << m_name << "\"";
 		if( isOnline())
 		{
 			o_str << ",\n\"idle_time\":" << m_idle_time;
