@@ -1,0 +1,133 @@
+name: CGRU Build Matrix
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cgru-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ubuntu:
+    name: Build Ubuntu ${{ matrix.ubuntu }}
+    runs-on: ubuntu-${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ["22.04", "24.04"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            libpq-dev \
+            libzip-dev \
+            python3 \
+            python3-dev \
+            qtbase5-dev \
+            qtmultimedia5-dev
+
+      - name: Build (SQL + GUI)
+        working-directory: afanasy/src/project.cmake
+        run: |
+          set -euo pipefail
+          ./clear.py
+          ./build.sh --quiet -j"$(nproc)"
+
+  build-linux-container:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Debian 11
+            image: debian:11
+          - name: Debian 12
+            image: debian:12
+          - name: Rocky 8
+            image: rockylinux:8
+          - name: Rocky 9
+            image: rockylinux:9
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build In Container (SQL + GUI)
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/src" \
+            -w /src \
+            "${{ matrix.image }}" \
+            /bin/bash -lc '
+              set -euo pipefail
+
+              if command -v apt-get >/dev/null 2>&1; then
+                export DEBIAN_FRONTEND=noninteractive
+                apt-get update
+                apt-get install -y \
+                  build-essential \
+                  cmake \
+                  git \
+                  libpq-dev \
+                  libzip-dev \
+                  python3 \
+                  python3-dev \
+                  qtbase5-dev \
+                  qtmultimedia5-dev
+              else
+                dnf -y install epel-release || true
+                dnf -y install \
+                  cmake \
+                  gcc \
+                  gcc-c++ \
+                  git \
+                  libzip-devel \
+                  make \
+                  postgresql-devel \
+                  python3 \
+                  python3-devel \
+                  qt5-qtbase-devel \
+                  qt5-qtmultimedia-devel \
+                  which
+              fi
+
+              cd /src/afanasy/src/project.cmake
+              ./clear.py
+              ./build.sh --quiet -j"$(nproc)"
+            '
+
+  build-windows-smoke:
+    name: Build Windows 2019 (No SQL/GUI)
+    runs-on: windows-2019
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $env:AF_POSTGRESQL = "NO"
+          $env:AF_GUI = "NO"
+          $env:AF_FERMER = "NO"
+          cmake -S afanasy/src/project.cmake -B afanasy/src/project.cmake/build-win -G "Visual Studio 16 2019" -A x64
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build afanasy/src/project.cmake/build-win --config Release -- /m
