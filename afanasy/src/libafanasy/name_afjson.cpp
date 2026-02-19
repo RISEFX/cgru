@@ -11,6 +11,7 @@
 #undef AFOUTPUT
 #include "../include/macrooutput.h"
 #include "../libafanasy/logger.h"
+#include "rapidjson/error/en.h"
 
 char * af::jsonParseMsg( rapidjson::Document & o_doc, const af::Msg * i_msg, std::string * o_err)
 {
@@ -35,7 +36,7 @@ char * af::jsonParseData( rapidjson::Document & o_doc, const char * i_data, int 
 	if (o_doc.ParseInsitu<0>(data).HasParseError())
 	{
 		int pos = o_doc.GetErrorOffset();
-		err = o_doc.GetParseError();
+		err = rapidjson::GetParseError_En( o_doc.GetParseError());
 		err += " (at character " + af::itos(pos) + " of " + af::itos(i_data_len)  + "):\n";
 		if ((pos >= 0) && (pos < i_data_len))
 		{
