@@ -132,6 +132,154 @@ jobs:
               ./build.sh --quiet -j"$(nproc)"
             '
 
+  build-macos:
+    name: Build macOS 13 (SQL + GUI)
+    if: ${{ false }} # Temporarily disabled by default.
+    runs-on: macos-13
+    timeout-minutes: 120
+    env:
+      VCPKG_REF: 2026.01.16
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.cache/vcpkg/archives
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Restore pip Cache
+        id: cache-pip-macos
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/Library/Caches/pip
+          key: macos-13-pip-3.10-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: |
+            macos-13-pip-3.10-
+
+      - name: Install aqtinstall
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/Library/Caches/pip
+          python -m pip install --upgrade pip aqtinstall
+
+      - name: Save pip Cache
+        if: always() && steps.cache-pip-macos.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ steps.cache-pip-macos.outputs.cache-primary-key }}
+
+      - name: Restore Qt Cache
+        id: cache-qt-macos
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/Qt/5.15.2/clang_64
+          key: macos-13-qt-5.15.2-clang_64
+
+      - name: Install Qt 5.15.2 (clang_64)
+        if: steps.cache-qt-macos.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m aqt install-qt mac desktop 5.15.2 clang_64 -O "$HOME/Qt"
+
+      - name: Save Qt Cache
+        if: always() && steps.cache-qt-macos.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/Qt/5.15.2/clang_64
+          key: ${{ steps.cache-qt-macos.outputs.cache-primary-key }}
+
+      - name: Export Qt Environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "QT_ROOT=$HOME/Qt/5.15.2/clang_64" >> "$GITHUB_ENV"
+          echo "$HOME/Qt/5.15.2/clang_64/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare vcpkg
+        shell: bash
+        run: |
+          set -euo pipefail
+          vcpkg_tag_ref="refs/tags/$VCPKG_REF"
+          if [ -d "$HOME/vcpkg/.git" ]; then
+            echo "Using existing vcpkg checkout at '$HOME/vcpkg'"
+            git -C "$HOME/vcpkg" fetch --depth 1 origin "$vcpkg_tag_ref"
+            git -C "$HOME/vcpkg" checkout --force FETCH_HEAD
+          else
+            rm -rf "$HOME/vcpkg"
+            git clone --depth 1 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+            git -C "$HOME/vcpkg" fetch --depth 1 origin "$vcpkg_tag_ref"
+            git -C "$HOME/vcpkg" checkout --force FETCH_HEAD
+          fi
+          echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Restore vcpkg Cache
+        id: cache-vcpkg-macos
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/vcpkg/downloads
+            ~/vcpkg/installed
+            ~/vcpkg/packages
+            ${{ github.workspace }}/.cache/vcpkg/archives
+          key: macos-13-vcpkg-${{ env.VCPKG_REF }}-x64-libpq-libzip
+          restore-keys: |
+            macos-13-vcpkg-${{ env.VCPKG_REF }}-x64-
+            macos-13-vcpkg-x64-
+
+      - name: Install vcpkg Dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+          "$VCPKG_ROOT/vcpkg" install libpq:x64-osx libzip:x64-osx
+
+      - name: Save vcpkg Cache
+        if: always() && steps.cache-vcpkg-macos.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/vcpkg/downloads
+            ~/vcpkg/installed
+            ~/vcpkg/packages
+            ${{ github.workspace }}/.cache/vcpkg/archives
+          key: ${{ steps.cache-vcpkg-macos.outputs.cache-primary-key }}
+
+      - name: Configure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          export CGRU_VERSION="$(tr -d '\r\n' < version.txt)"
+          export CGRU_REVISION="$(git rev-parse HEAD)"
+          export AF_POSTGRESQL="REQUIRED"
+          export AF_OSTYPE="macosx"
+          export AF_GUI="YES"
+          export AF_FERMER="NO"
+
+          export AF_PYTHON_INCLUDE_PATH="$(python -c 'import sysconfig; print(sysconfig.get_path(\"include\"))')"
+          export AF_PYTHON_LIBRARIES="$(python -c 'import pathlib,sysconfig; print(pathlib.Path(sysconfig.get_config_var(\"LIBDIR\") or \"\", sysconfig.get_config_var(\"LDLIBRARY\") or \"\"))')"
+
+          vcpkg_installed="$VCPKG_ROOT/installed/x64-osx"
+          export CMAKE_PREFIX_PATH="$QT_ROOT:$vcpkg_installed"
+
+          cmake \
+            -S afanasy/src/project.cmake \
+            -B afanasy/src/project.cmake/build-mac \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" \
+            -DPostgreSQL_INCLUDE_DIR="$vcpkg_installed/include" \
+            -DPostgreSQL_LIBRARY="$vcpkg_installed/lib/libpq.dylib"
+
+      - name: Build
+        shell: bash
+        run: cmake --build afanasy/src/project.cmake/build-mac --parallel "$(sysctl -n hw.logicalcpu)"
+
   build-windows:
     name: Build Windows 2019 (SQL + GUI)
     runs-on: windows-2019
