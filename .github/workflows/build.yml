@@ -260,6 +260,7 @@ jobs:
           export AF_OSTYPE="macosx"
           export AF_GUI="YES"
           export AF_FERMER="NO"
+          export AF_ADD_CFLAGS="-w"
 
           export AF_PYTHON_INCLUDE_PATH="$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
           export AF_PYTHON_LIBRARIES="$(python -c 'import pathlib,sysconfig; print(pathlib.Path(sysconfig.get_config_var("LIBDIR") or "", sysconfig.get_config_var("LDLIBRARY") or ""))')"
@@ -282,7 +283,6 @@ jobs:
 
   build-windows:
     name: Build Windows 2019 (SQL + GUI)
-    if: ${{ false }} # Temporarily disabled while stabilizing macOS.
     runs-on: windows-2019
     timeout-minutes: 90
     env:
@@ -383,6 +383,7 @@ jobs:
           $env:AF_OSTYPE = "windows"
           $env:AF_GUI = "YES"
           $env:AF_FERMER = "NO"
+          $env:AF_ADD_CFLAGS = "/W0"
           $env:AF_PYTHON_INCLUDE_PATH = python -c "import sysconfig; print(sysconfig.get_path('include'))"
           $env:AF_PYTHON_LIBRARIES = python -c "import pathlib,sys; print(pathlib.Path(sys.base_prefix,'libs',f'python{sys.version_info[0]}{sys.version_info[1]}.lib'))"
 
