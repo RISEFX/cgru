@@ -17,7 +17,6 @@ concurrency:
 jobs:
   build-ubuntu:
     name: Build Ubuntu ${{ matrix.ubuntu }}
-    if: ${{ false }} # Temporarily disabled, keep Windows-only CI active.
     runs-on: ubuntu-${{ matrix.ubuntu }}
     strategy:
       fail-fast: false
@@ -51,7 +50,6 @@ jobs:
 
   build-linux-container:
     name: Build ${{ matrix.name }}
-    if: ${{ false }} # Temporarily disabled, keep Windows-only CI active.
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
