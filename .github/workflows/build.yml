@@ -60,9 +60,9 @@ jobs:
           - name: Debian 13
             image: debian:13
           - name: Rocky 9
-            image: rockylinux:9
+            image: rockylinux/rockylinux:9
           - name: Rocky 10
-            image: rockylinux:10
+            image: rockylinux/rockylinux:10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
