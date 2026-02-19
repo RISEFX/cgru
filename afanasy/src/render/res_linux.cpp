@@ -131,7 +131,7 @@ void GetResources_LINUX(af::HostRes & hres, bool verbose)
         buffer[sizeof(buffer)-1] = '\0';
         unsigned long long llu;
 		static const int params_len = 6;
-        char records[params_len][12] = {"MemTotal:","MemFree:","Buffers:","Cached:","SwapTotal:","SwapFree:"};
+        char records[params_len][14] = {"MemTotal:","MemAvailable:","Buffers:","Cached:","SwapTotal:","SwapFree:"};
         int params_founded[params_len] = {0,0,0,0,0,0};
         int32_t * pointers[params_len] = {&hres.mem_total_mb, &hres.mem_free_mb, &hres.mem_buffers_mb, &hres.mem_cached_mb, &hres.swap_total_mb, &hres.swap_used_mb};
         int params_founded_count = 0;
@@ -161,7 +161,6 @@ void GetResources_LINUX(af::HostRes & hres, bool verbose)
 				break;
         }
         ::fclose( memfd );
-        hres.mem_free_mb = hres.mem_free_mb + hres.mem_buffers_mb + hres.mem_cached_mb;
         hres.swap_used_mb = hres.swap_total_mb - hres.swap_used_mb;
     }
     else
