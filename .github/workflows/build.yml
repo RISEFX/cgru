@@ -134,7 +134,6 @@ jobs:
 
   build-macos:
     name: Build macOS 13 (SQL + GUI)
-    if: ${{ false }} # Temporarily disabled by default.
     runs-on: macos-13
     timeout-minutes: 120
     env:
@@ -349,10 +348,10 @@ jobs:
             C:\vcpkg\installed
             C:\vcpkg\packages
             C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: windows-2019-vcpkg-${{ env.VCPKG_REF }}-x64-libpq-libzip
+          key: windows-2019-vcpkg-v2-${{ env.VCPKG_REF }}-x64-libpq-libzip
           restore-keys: |
-            windows-2019-vcpkg-${{ env.VCPKG_REF }}-x64-
-            windows-2019-vcpkg-x64-
+            windows-2019-vcpkg-v2-${{ env.VCPKG_REF }}-x64-
+            windows-2019-vcpkg-v2-x64-
 
       - name: Install vcpkg Dependencies
         shell: pwsh
@@ -362,7 +361,7 @@ jobs:
           C:\vcpkg\vcpkg.exe install libpq:x64-windows libzip:x64-windows
 
       - name: Save vcpkg Cache
-        if: always()
+        if: always() && steps.cache-vcpkg.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
