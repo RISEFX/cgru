@@ -91,8 +91,12 @@ jobs:
                   qtbase5-dev \
                   qtmultimedia5-dev
               else
+                dnf -y install dnf-plugins-core || true
+                crb enable || dnf config-manager --set-enabled crb || true
                 dnf -y install epel-release || true
-                dnf -y install \
+                dnf -y makecache
+
+                if ! dnf -y install \
                   cmake \
                   gcc \
                   gcc-c++ \
@@ -104,7 +108,21 @@ jobs:
                   python3-devel \
                   qt5-qtbase-devel \
                   qt5-qtmultimedia-devel \
-                  which
+                  which; then
+                  dnf -y install \
+                    cmake \
+                    gcc \
+                    gcc-c++ \
+                    git \
+                    libzip5-devel \
+                    make \
+                    postgresql-devel \
+                    python3 \
+                    python3-devel \
+                    qt5-qtbase-devel \
+                    qt5-qtmultimedia-devel \
+                    which
+                fi
               fi
 
               cd /src/afanasy/src/project.cmake
