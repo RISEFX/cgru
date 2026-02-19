@@ -112,21 +112,56 @@ jobs:
               ./build.sh --quiet -j"$(nproc)"
             '
 
-  build-windows-smoke:
-    name: Build Windows 2019 (No SQL/GUI)
+  build-windows:
+    name: Build Windows 2019 (SQL + GUI)
     runs-on: windows-2019
-    continue-on-error: true
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Qt 5.15.2 (MSVC2019)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip aqtinstall
+          python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt
+          "QT_ROOT=C:\Qt\5.15.2\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "C:\Qt\5.15.2\msvc2019_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install vcpkg Dependencies
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          C:\vcpkg\vcpkg.exe install libpq:x64-windows libzip:x64-windows
+          "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Configure
         shell: pwsh
         run: |
-          $env:AF_POSTGRESQL = "NO"
-          $env:AF_GUI = "NO"
+          $env:AF_POSTGRESQL = "REQUIRED"
+          $env:AF_OSTYPE = "windows"
+          $env:AF_GUI = "YES"
           $env:AF_FERMER = "NO"
-          cmake -S afanasy/src/project.cmake -B afanasy/src/project.cmake/build-win -G "Visual Studio 16 2019" -A x64
+          $env:AF_PYTHON_INCLUDE_PATH = python -c "import sysconfig; print(sysconfig.get_path('include'))"
+          $env:AF_PYTHON_LIBRARIES = python -c "import pathlib,sys; print(pathlib.Path(sys.base_prefix,'libs',f'python{sys.version_info[0]}{sys.version_info[1]}.lib'))"
+
+          $vcpkgInstalled = "$env:VCPKG_ROOT\installed\x64-windows"
+
+          cmake `
+            -S afanasy/src/project.cmake `
+            -B afanasy/src/project.cmake/build-win `
+            -G "Visual Studio 16 2019" `
+            -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT" `
+            -DPostgreSQL_INCLUDE_DIR="$vcpkgInstalled\include" `
+            -DPostgreSQL_LIBRARY="$vcpkgInstalled\lib\libpq.lib"
 
       - name: Build
         shell: pwsh
