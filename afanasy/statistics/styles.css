@@ -13,7 +13,7 @@ div { overflow: hidden;}
 
 a { color: #040;}
 
-#top_panel {
+#top_panel, #bottom_panel {
 margin: 4px 20px;
 text-align: center;
 border-radius: 6px;
@@ -173,6 +173,20 @@ font-size: 12px;
 }
 table.table.logs .object {
 max-width: 360px;
+}
+
+#bottom_panel > div {
+float: left;
+-border: 1px solid #00F;
+}
+#bottom_panel .label {
+}
+
+#records_delete_ctrl > div {
+float: left;
+padding: 2px 6px;
+margin: 2px 6px;
+-border: 1px solid #0F0;
 }
 
 svg {

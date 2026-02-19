@@ -70,6 +70,13 @@ function g_Start(i_data, i_args)
 	}
 
 
+	// Fill date delete field:
+	let date = new Date();
+	date = date.getFullYear() - 1;
+	date += '-01-01';
+	$('records_delete_date').textContent = date;
+
+
 	let hash = document.location.hash;
 	// Override arguments from hash (if  any):
 	g_HashGet();
@@ -812,7 +819,7 @@ function g_ShowGraph(i_data, i_args)
 	}
 }
 
-function g_FolderDelete(i_evt)
+function g_FolderDelete()
 {
 	let folder = $('folder_delete').textContent;
 	if (folder == null) return;
@@ -844,6 +851,22 @@ function g_FoldersDeleted(i_data, i_args)
 	}
 }
 
+function g_RecordsDelete()
+{
+	let table = g_args.action.split('_')[0];
+
+	let str = $('records_delete_date').textContent;
+	if ((str == null) || (str.length == 0))
+		return;
+	let date = new Date(Date.parse(str));
+	if (date == null)
+		return;
+	date = Math.round(date.valueOf() / 1000);
+
+console.log(table);
+console.log(date);
+}
+
 function g_TimeFocus(i_evt)
 {
 	// If there is no text entered:
@@ -858,13 +881,7 @@ function g_TimeFocus(i_evt)
 	date = date.substr(0, date.indexOf('T'));
 	el.textContent = date;
 
-	// Move cusor to the end:
-	let range = document.createRange();//Create a range (a range is a like the selection but invisible)
-	range.selectNodeContents(el);//Select the entire contents of the element with the range
-	range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
-	let selection = window.getSelection();//get the selection object (allows you to change selection)
-	selection.removeAllRanges();//remove any selections already made
-	selection.addRange(range);//make the range you have just created the visible selection
+	g_MoveCursorToTheEnd(el);
 }
 
 function g_TimeKeyDown(i_evt)
@@ -923,6 +940,16 @@ function g_TimeIntervalGet()
 	g_args.time_max = Math.ceil( g_args.time_max / interval) * interval;
 
 	return interval;
+}
+
+function g_MoveCursorToTheEnd(i_el)
+{
+	let range = document.createRange();//Create a range (a range is a like the selection but invisible)
+	range.selectNodeContents(i_el);//Select the entire contents of the element with the range
+	range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
+	let selection = window.getSelection();//get the selection object (allows you to change selection)
+	selection.removeAllRanges();//remove any selections already made
+	selection.addRange(range);//make the range you have just created the visible selection
 }
 
 function g_SecToHMS(i_sec)

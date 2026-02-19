@@ -42,8 +42,7 @@
 		<div id="folders_ctrl_delete" style="_display:_none">
 			<div id="folder_delete" contenteditable=true class="editing"></div>
 			<div class="button" ondblclick="g_FolderDelete()"
-				title="Double click to delete folder(s).
-Use '%' character for any string.">
+				title="Double click to delete folder(s).">
 				DELETE FOLDER</div>
 		</div>
 	</div>
@@ -56,6 +55,17 @@ Use '%' character for any string.">
 </div>
 
 <div id="content"></div>
+
+<div id=bottom_panel>
+	<div id="records_delete_ctrl">
+		<div class="label">
+			Delete all records before:
+		</div>
+		<div id="records_delete_date" contenteditable=true class="editing"></div>
+		<div title="Double click to delete records." class="button" ondblclick="g_RecordsDelete()">
+			DELETE</div>
+	</div>
+</div>
 
 <table width="100%" align="center" cellpadding="0" cellspacing="0">
 <tr onclick="g_ShowLog()">
