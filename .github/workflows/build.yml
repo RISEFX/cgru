@@ -133,8 +133,8 @@ jobs:
             '
 
   build-macos:
-    name: Build macOS 13 (SQL + GUI)
-    runs-on: macos-13
+    name: Build macOS 15 Intel (SQL + GUI)
+    runs-on: macos-15-intel
     timeout-minutes: 120
     env:
       VCPKG_REF: 2026.01.16
@@ -153,9 +153,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/Library/Caches/pip
-          key: macos-13-pip-3.10-${{ hashFiles('.github/workflows/build.yml') }}
+          key: macos-15-intel-pip-3.10-${{ hashFiles('.github/workflows/build.yml') }}
           restore-keys: |
-            macos-13-pip-3.10-
+            macos-15-intel-pip-3.10-
 
       - name: Install aqtinstall
         shell: bash
@@ -176,7 +176,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/Qt/5.15.2/clang_64
-          key: macos-13-qt-5.15.2-clang_64
+          key: macos-15-intel-qt-5.15.2-clang_64
 
       - name: Install Qt 5.15.2 (clang_64)
         if: steps.cache-qt-macos.outputs.cache-hit != 'true'
@@ -225,10 +225,10 @@ jobs:
             ~/vcpkg/installed
             ~/vcpkg/packages
             ${{ github.workspace }}/.cache/vcpkg/archives
-          key: macos-13-vcpkg-${{ env.VCPKG_REF }}-x64-libpq-libzip
+          key: macos-15-intel-vcpkg-${{ env.VCPKG_REF }}-x64-libpq-libzip
           restore-keys: |
-            macos-13-vcpkg-${{ env.VCPKG_REF }}-x64-
-            macos-13-vcpkg-x64-
+            macos-15-intel-vcpkg-${{ env.VCPKG_REF }}-x64-
+            macos-15-intel-vcpkg-x64-
 
       - name: Install vcpkg Dependencies
         shell: bash
