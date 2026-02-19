@@ -137,7 +137,7 @@ jobs:
     runs-on: windows-2019
     timeout-minutes: 90
     env:
-      VCPKG_COMMIT: 44bb3ce006467fc13ba37ca099f64077b8bbf84d
+      VCPKG_REF: 2026.01.16
       VCPKG_DEFAULT_BINARY_CACHE: C:\Users\runneradmin\AppData\Local\vcpkg\archives
     steps:
       - name: Checkout
@@ -179,16 +179,17 @@ jobs:
       - name: Prepare vcpkg
         shell: pwsh
         run: |
+          $vcpkgTagRef = "refs/tags/$env:VCPKG_REF"
           if (Test-Path "C:\vcpkg\.git") {
             Write-Host "Using existing vcpkg checkout at C:\\vcpkg"
-            git -C C:\vcpkg fetch --depth 1 origin $env:VCPKG_COMMIT
-            git -C C:\vcpkg checkout --force $env:VCPKG_COMMIT
+            git -C C:\vcpkg fetch --depth 1 origin "$vcpkgTagRef"
+            git -C C:\vcpkg checkout --force FETCH_HEAD
           } elseif (Test-Path "C:\vcpkg\vcpkg.exe") {
             Write-Host "Using existing vcpkg install at C:\\vcpkg"
           } else {
             git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
-            git -C C:\vcpkg fetch --depth 1 origin $env:VCPKG_COMMIT
-            git -C C:\vcpkg checkout --force $env:VCPKG_COMMIT
+            git -C C:\vcpkg fetch --depth 1 origin "$vcpkgTagRef"
+            git -C C:\vcpkg checkout --force FETCH_HEAD
           }
           "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -201,9 +202,9 @@ jobs:
             C:\vcpkg\installed
             C:\vcpkg\packages
             C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: windows-2019-vcpkg-${{ env.VCPKG_COMMIT }}-x64-libpq-libzip
+          key: windows-2019-vcpkg-${{ env.VCPKG_REF }}-x64-libpq-libzip
           restore-keys: |
-            windows-2019-vcpkg-${{ env.VCPKG_COMMIT }}-x64-
+            windows-2019-vcpkg-${{ env.VCPKG_REF }}-x64-
             windows-2019-vcpkg-x64-
 
       - name: Install vcpkg Dependencies
