@@ -142,22 +142,52 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+          cache: "pip"
+
+      - name: Restore Qt Cache
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: C:\Qt\5.15.2\msvc2019_64
+          key: windows-2019-qt-5.15.2-msvc2019_64
 
       - name: Install Qt 5.15.2 (MSVC2019)
+        if: steps.cache-qt.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           python -m pip install --upgrade pip aqtinstall
           python -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -O C:\Qt
+
+      - name: Export Qt Environment
+        shell: pwsh
+        run: |
           "QT_ROOT=C:\Qt\5.15.2\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "C:\Qt\5.15.2\msvc2019_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Clone vcpkg
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
+          "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Restore vcpkg Cache
+        id: cache-vcpkg
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\vcpkg\downloads
+            C:\vcpkg\installed
+            C:\vcpkg\packages
+          key: windows-2019-vcpkg-x64-libpq-libzip-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: |
+            windows-2019-vcpkg-x64-libpq-libzip-
+            windows-2019-vcpkg-x64-
 
       - name: Install vcpkg Dependencies
         shell: pwsh
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
           C:\vcpkg\vcpkg.exe install libpq:x64-windows libzip:x64-windows
-          "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Configure
         shell: pwsh
