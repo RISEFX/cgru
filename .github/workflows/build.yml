@@ -210,6 +210,7 @@ jobs:
       - name: Install vcpkg Dependencies
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force -Path "$env:VCPKG_DEFAULT_BINARY_CACHE" | Out-Null
           C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
           C:\vcpkg\vcpkg.exe install libpq:x64-windows libzip:x64-windows
 
