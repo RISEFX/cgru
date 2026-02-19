@@ -192,10 +192,13 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
+          $env:CGRU_VERSION = (Get-Content version.txt -Raw).Trim()
+          $env:CGRU_REVISION = (git rev-parse HEAD).Trim()
           $env:AF_POSTGRESQL = "REQUIRED"
           $env:AF_OSTYPE = "windows"
           $env:AF_GUI = "YES"
           $env:AF_FERMER = "NO"
+          $env:AF_ADD_CFLAGS = "/DNOMINMAX"
           $env:AF_PYTHON_INCLUDE_PATH = python -c "import sysconfig; print(sysconfig.get_path('include'))"
           $env:AF_PYTHON_LIBRARIES = python -c "import pathlib,sys; print(pathlib.Path(sys.base_prefix,'libs',f'python{sys.version_info[0]}{sys.version_info[1]}.lib'))"
 
