@@ -57,14 +57,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Debian 11
-            image: debian:11
           - name: Debian 12
             image: debian:12
-          - name: Rocky 8
-            image: rockylinux:8
+          - name: Debian 13
+            image: debian:13
           - name: Rocky 9
             image: rockylinux:9
+          - name: Rocky 10
+            image: rockylinux:10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -288,8 +288,8 @@ jobs:
         run: cmake --build afanasy/src/project.cmake/build-mac --parallel "$(sysctl -n hw.logicalcpu)"
 
   build-windows:
-    name: Build Windows 2019 (SQL + GUI)
-    runs-on: windows-2019
+    name: Build Windows 2022 (SQL + GUI)
+    runs-on: windows-2022
     timeout-minutes: 90
     env:
       VCPKG_REF: 2026.01.16
@@ -308,7 +308,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:\Qt\5.15.2\msvc2019_64
-          key: windows-2019-qt-5.15.2-msvc2019_64
+          key: windows-2022-qt-5.15.2-msvc2019_64
 
       - name: Install Qt 5.15.2 (MSVC2019)
         if: steps.cache-qt.outputs.cache-hit != 'true'
@@ -356,10 +356,10 @@ jobs:
             C:\vcpkg\installed
             C:\vcpkg\packages
             C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: windows-2019-vcpkg-v2-${{ env.VCPKG_REF }}-x64-libpq-libzip
+          key: windows-2022-vcpkg-v2-${{ env.VCPKG_REF }}-x64-libpq-libzip
           restore-keys: |
-            windows-2019-vcpkg-v2-${{ env.VCPKG_REF }}-x64-
-            windows-2019-vcpkg-v2-x64-
+            windows-2022-vcpkg-v2-${{ env.VCPKG_REF }}-x64-
+            windows-2022-vcpkg-v2-x64-
 
       - name: Install vcpkg Dependencies
         shell: pwsh
@@ -398,8 +398,9 @@ jobs:
           cmake `
             -S afanasy/src/project.cmake `
             -B afanasy/src/project.cmake/build-win `
-            -G "Visual Studio 16 2019" `
+            -G "Visual Studio 17 2022" `
             -A x64 `
+            -T v142 `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
             -DCMAKE_C_FLAGS="/W0" `
             -DCMAKE_CXX_FLAGS="/W0" `
