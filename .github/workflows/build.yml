@@ -164,10 +164,18 @@ jobs:
           "QT_ROOT=C:\Qt\5.15.2\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "C:\Qt\5.15.2\msvc2019_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Clone vcpkg
+      - name: Prepare vcpkg
         shell: pwsh
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
+          if (Test-Path "C:\vcpkg\.git") {
+            Write-Host "Using existing vcpkg checkout at C:\\vcpkg"
+            git -C C:\vcpkg fetch --depth 1 origin
+            git -C C:\vcpkg reset --hard FETCH_HEAD
+          } elseif (Test-Path "C:\vcpkg\vcpkg.exe") {
+            Write-Host "Using existing vcpkg install at C:\\vcpkg"
+          } else {
+            git clone --depth 1 https://github.com/microsoft/vcpkg.git C:\vcpkg
+          }
           "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Restore vcpkg Cache
